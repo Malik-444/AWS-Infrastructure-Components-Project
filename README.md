@@ -1,6 +1,6 @@
 # Secure Static Website on AWS
 
-![Architecture GIF](docs/architecture-darkmode.gif)
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/1266f9be-2eb4-4306-bf07-004d13b72e2e" />
 
 ## Project Overview
 
@@ -39,12 +39,6 @@ The architecture integrates security, deployment, and hosting components to prov
 4. **Security Monitoring:** GuardDuty detects threats → EventBridge filters → Lambda remediates → SNS alerts
 5. **CI/CD Pipeline:** Automates website updates and deployment
 
-## Folder Structure
-
-- `static-website/`: Terraform or manual setup for hosting
-- `security-monitoring/`: Terraform or manual setup for GuardDuty, Lambda, EventBridge, SNS
-- `ci-cd/`: Terraform or manual setup for CodePipeline/CodeBuild
-- `docs/`: Screenshots, diagrams, and the architecture GIF
 
 ## How the Components Complement Each Other
 
