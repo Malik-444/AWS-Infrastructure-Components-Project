@@ -3,54 +3,73 @@ import json
 import os
 from datetime import datetime
 
-sns = boto3.client('sns')
+# AWS clients
+s3 = boto3.client("s3")
+sns = boto3.client("sns")
+
+# SNS topic from environment variable
+SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN")
 
 def lambda_handler(event, context):
-    try:
-        detail = event["detail"]
-        instance_id = detail["resource"]["instanceDetails"]["instanceId"]
-        public_ip = detail["resource"]["instanceDetails"]["networkInterfaces"][0]["publicIp"]
-        finding_type = detail["type"]
-        region = detail["region"]
-        description = detail["description"]
-        time = detail["service"]["eventFirstSeen"]
-        profile = detail["resource"]["instanceDetails"]["iamInstanceProfile"]["arn"]
-        remote_ip = detail["service"]["action"]["networkConnectionAction"]["remoteIpDetails"]["ipAddressV4"]
-        remote_port = detail["service"]["action"]["networkConnectionAction"]["remotePortDetails"]["port"]
-        
-        readable_message = f"""
-[!] GuardDuty Alert: Trojan Activity Detected
+    detail = event.get("detail", {})
+    finding_type = detail.get("type", "")
+    severity = detail.get("severity", 0)
+    region = detail.get("region", "unknown")
+    account_id = detail.get("accountId", "unknown")
+    description = detail.get("description", "No description provided")
 
-[TYPE] {finding_type}
-[DESC] {description}
+    # Only handle S3 Block Public Access disabled findings
+    if finding_type != "Policy:S3/BucketBlockPublicAccessDisabled":
+        print(f"✅ Skipping non-S3 Block Public Access finding: {finding_type}")
+        return {"status": "skipped"}
 
-[INSTANCE] {instance_id}
-[PROFILE] {profile}
-[PUBLIC IP] {public_ip}
-[REMOTE] {remote_ip}:{remote_port}
-[REGION] {region}
-[TIME] {datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%fZ").strftime('%Y-%m-%d %H:%M:%S')} UTC
+    # Remediate affected buckets
+    buckets = detail.get("resource", {}).get("s3BucketDetails", [])
+    remediated_buckets = []
 
-[RECOMMENDATION]
-Isolate or stop the EC2 instance and investigate for malware or unauthorized traffic.
+    for bucket in buckets:
+        bucket_name = bucket.get("name")
+        if bucket_name:
+            print(f"🔒 Re-enabling Block Public Access for bucket: {bucket_name}")
+            s3.put_public_access_block(
+                Bucket=bucket_name,
+                PublicAccessBlockConfiguration={
+                    "BlockPublicAcls": True,
+                    "IgnorePublicAcls": True,
+                    "BlockPublicPolicy": True,
+                    "RestrictPublicBuckets": True
+                }
+            )
+            remediated_buckets.append(bucket_name)
 
-[DOCS] https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings.html
+    # Construct emoji-enhanced SNS message
+    if SNS_TOPIC_ARN and remediated_buckets:
+        message = f"""
+🚨 *GuardDuty Alert: S3 Block Public Access Disabled* 🚨
+
+📅 Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}
+🏦 Account ID: {account_id}
+🌍 Region: {region}
+⚠️ Severity: {severity}
+📝 Description: {description}
+
+✅ Buckets Secured:
 """
+        for b in remediated_buckets:
+            message += f"   🔒 {b}\n"
 
-        sns.publish(
-            TopicArn=os.environ["SNS_TOPIC_ARN"],
-            Subject="[ALERT] GuardDuty: EC2 Threat Detected",
-            Message=readable_message
-        )
+        message += "\n🛡 Lambda auto-remediation executed successfully!"
 
-        return {
-            'statusCode': 200,
-            'body': f"Formatted alert sent to SNS topic for instance {instance_id}"
-        }
+        try:
+            sns.publish(
+                TopicArn=SNS_TOPIC_ARN,
+                Subject="🚨 GuardDuty Alert: S3 Block Public Access Disabled",
+                Message=message
+            )
+            print("📧 SNS notification sent successfully.")
+        except Exception as e:
+            print(f"❌ Failed to send SNS notification: {e}")
+    else:
+        print("⚠️ No SNS_TOPIC_ARN set or no buckets remediated. Skipping SNS.")
 
-    except Exception as e:
-        print("Error:", str(e))
-        return {
-            'statusCode': 500,
-            'body': f"Error processing event: {str(e)}"
-        }
+    return {"status": "remediated", "buckets": remediated_buckets}
