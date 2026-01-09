@@ -5,7 +5,7 @@
 
 ## Project Overview
 
-This project demonstrates how to host a **secure static website** on AWS using S3, CloudFront, Route 53, and WAF, with **automated security monitoring and CI/CD pipelines**. It’s fully modular and educational, supporting both **Terraform automation** and **manual AWS setup**.
+This project demonstrates how I built a secure static website on AWS using S3, CloudFront, WAF, and Route 53, with ***automated security monitoring and remediation** via GuardDuty, Lambda, EventBridge, and SNS. It’s modular, educational, and supports both manual AWS setup and Terraform automation.
 
 ## Key Features
 
