@@ -1,6 +1,7 @@
 # Secure Static Website on AWS
 
-<img width="2048" height="1365" alt="0abdfa21-ee8f-4245-99dd-5ecf1e88565e" src="https://github.com/user-attachments/assets/7ca399e2-def8-4225-904e-9b2c3acdbfc7" />
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/4f2984ef-3ad5-4d12-a381-4221c4b49400" />
+
 
 
 ## Project Overview
