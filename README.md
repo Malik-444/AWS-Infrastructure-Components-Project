@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-This project demonstrates how I built a secure static website on AWS using S3, CloudFront, WAF, and Route 53, with ***automated security monitoring and remediation** via GuardDuty, Lambda, EventBridge, and SNS. It’s modular, educational, and supports both manual AWS setup and Terraform automation.
+This project shows the infrastructure I builtfor my secure static website on AWS using S3, CloudFront, WAF, and Route 53, with automated security monitoring and remediation via GuardDuty, Lambda, EventBridge, and SNS. Also includes a CI/CD pipeline with AWS inspector to make sure there isnt any vulenerabilty or security isssues 
 
 ## Key Features
 
